@@ -1,0 +1,3 @@
+storage:
+  locationPath: storage/test
+  append: false
