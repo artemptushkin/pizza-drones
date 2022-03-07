@@ -41,5 +41,5 @@ class EventStorageProperties : InitializingBean {
 class EventStorageConfiguration {
 
     @Bean
-    fun droneEventChannel(): Channel<DroneEvent> = Channel()
+    fun droneEventChannel(): Channel<DroneEvent> = Channel(capacity = 3)
 }

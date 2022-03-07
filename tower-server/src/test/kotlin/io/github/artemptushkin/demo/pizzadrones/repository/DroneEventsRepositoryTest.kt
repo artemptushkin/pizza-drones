@@ -1,9 +1,13 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
 import io.github.artemptushkin.demo.pizzadrones.domain.DroneEvent
+import io.github.artemptushkin.demo.pizzadrones.repository.test.DatabaseStorageTestUtil
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.withIndex
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,15 +17,25 @@ import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.ZonedDateTime.now
 import kotlin.random.Random
+import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
+@OptIn(ExperimentalTime::class)
 @ActiveProfiles("test")
-//@SpringBootTest
 @ExtendWith(SpringExtension::class)
 @ContextConfiguration(classes = [EventStorageConfiguration::class], initializers = [ConfigDataApplicationContextInitializer::class])
 class DroneEventsRepositoryTest {
 
     @Autowired
     lateinit var droneEventsRepository: DroneEventsRepository
+
+    @Autowired
+    lateinit var databaseStorageTestUtil: DatabaseStorageTestUtil
+
+    @BeforeEach
+    fun setup() {
+        databaseStorageTestUtil.resetDatabase()
+    }
 
     @Test
     fun `it saves 10 events`() {
@@ -34,4 +48,72 @@ class DroneEventsRepositoryTest {
             assertThat(droneEventsRepository.findAll().toList()).hasSize(10)
         }
     }
+
+    @Test
+    fun `it saves and returns`() {
+        val id1 = Random.nextLong()
+        val id2 = Random.nextLong()
+        val drone1Event1 = droneEvent(id1)
+        val drone1Event2 = droneEvent(id1)
+        val drone2Event1 = droneEvent(id2)
+        val drone2Event2 = droneEvent(id2)
+
+        runBlocking {
+            droneEventsRepository.save(drone1Event1)
+            droneEventsRepository.save(drone2Event1)
+            droneEventsRepository.save(drone2Event2)
+            droneEventsRepository.save(drone1Event2)
+
+            assertThat(droneEventsRepository.get(id1).toList()).hasSize(2)
+            assertThat(droneEventsRepository.get(id2).toList()).hasSize(2)
+        }
+    }
+
+    @Test
+    fun `it stores many events`() {
+        val elementsToProcess = 100000
+        val time = measureTime {
+            runBlocking {
+                for (i in 0 until elementsToProcess) {
+                    droneEventsRepository.save(randomEvent())
+                }
+            }
+        }
+        val count: Int = runBlocking {
+            droneEventsRepository
+                .findAll()
+                .withIndex()
+                .count()
+        }
+        println("it took $time to process $count elements")
+        assertThat(count).isEqualTo(elementsToProcess)
+    }
+
+    @Test
+    fun `it stores in concurrent mode`() {
+        val droneId1 = Random.nextLong()
+        val droneId2 = Random.nextLong()
+        CoroutineScope(Dispatchers.IO)
+            .launch {
+                for (i in 0 until 100) {
+                    droneEventsRepository.save(droneEvent(droneId1))
+                }
+            }
+        CoroutineScope(Dispatchers.IO)
+            .launch {
+                for (i in 0 until 100) {
+                    droneEventsRepository.save(droneEvent(droneId2))
+                }
+            }
+        runBlocking {
+            delay(300)
+            assertThat(droneEventsRepository
+                .findAll()
+                .withIndex()
+                .count()).isEqualTo(200)
+        }
+    }
+
+    private fun randomEvent() = DroneEvent(now().toEpochSecond(), Random.nextLong())
+    private fun droneEvent(id: Long) = DroneEvent(now().toEpochSecond(), id)
 }

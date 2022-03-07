@@ -28,7 +28,6 @@ class DroneEventsRepository(private val eventStorageProperties: EventStorageProp
         CoroutineScope(Dispatchers.IO)
             .launch {
                 while (!eventsChannel.isClosedForReceive) {
-                    println("consuming all of them")
                     eventsChannel.consumeEach {
                         writer.write(StringBuilder(it.droneId.toString()).append('\n').toString())
                         println("persisting")
@@ -39,12 +38,12 @@ class DroneEventsRepository(private val eventStorageProperties: EventStorageProp
     }
 
     suspend fun save(droneEvent: DroneEvent) {
-        println("saving an event with timestamp ${droneEvent.droneId}")
-        val newLine = atomicCounter.incrementAndGet()
+        println("saving an event with drone id ${droneEvent.droneId}")
+        val newLine = atomicCounter.getAndIncrement()
         index.compute(droneEvent.droneId) { _, u ->
             val result: MutableList<Int> = u ?: mutableListOf()
             result.add(newLine)
-            u
+            result
         }
         eventsChannel.send(droneEvent)
     }
@@ -53,16 +52,15 @@ class DroneEventsRepository(private val eventStorageProperties: EventStorageProp
         val currentDroneIndices: MutableList<Int>? = index[droneId]
         if (currentDroneIndices != null) {
             return flow {
-                var position = 0
-                eventStorageProperties.database.file
-                    .reader()
-                    .readLines()
-                    .forEachIndexed { index, s ->
-                        if (index == currentDroneIndices[position]) {
-                            emit(s)
-                            ++position
-                        }
+                var indexPosition = 0
+                val lines = eventStorageProperties.database.file.reader().readLines()
+                for (indexedValue in lines.iterator().withIndex()) {
+                    if (indexedValue.index == currentDroneIndices[indexPosition]) {
+                        emit(indexedValue.value)
+                        ++indexPosition
                     }
+                    if (currentDroneIndices.size == indexPosition) break
+                }
             }
         }
         return emptyFlow()
