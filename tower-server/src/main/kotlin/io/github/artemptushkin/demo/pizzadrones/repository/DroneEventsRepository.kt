@@ -7,8 +7,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.springframework.stereotype.Repository
@@ -18,7 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Repository
-class DroneEventsRepository(private val eventStorageProperties: EventStorageProperties, private val eventsChannel: Channel<DroneEvent>) {
+class DroneEventsRepository(
+    private val eventStorageProperties: EventStorageProperties,
+    private val inputChannel: Channel<DroneEvent>,
+    private val outputFlow: MutableSharedFlow<DroneEvent>
+) {
     private val index: MutableMap<Long, MutableList<Int>> = ConcurrentHashMap()
     private val atomicCounter: AtomicInteger = AtomicInteger()
 
@@ -27,11 +31,12 @@ class DroneEventsRepository(private val eventStorageProperties: EventStorageProp
         val writer = FileOutputStream(databaseFile, eventStorageProperties.append).bufferedWriter()
         CoroutineScope(Dispatchers.IO)
             .launch {
-                while (!eventsChannel.isClosedForReceive) {
-                    eventsChannel.consumeEach {
+                while (!inputChannel.isClosedForReceive) {
+                    inputChannel.consumeEach {
                         writer.write(StringBuilder(it.droneId.toString()).append('\n').toString())
                         println("persisting")
                         writer.flush()
+                        outputFlow.emit(it)
                     }
                 }
             }
@@ -45,13 +50,14 @@ class DroneEventsRepository(private val eventStorageProperties: EventStorageProp
             result.add(newLine)
             result
         }
-        eventsChannel.send(droneEvent)
+        inputChannel.send(droneEvent)
     }
 
     fun get(droneId: Long): Flow<String> {
-        val currentDroneIndices: MutableList<Int>? = index[droneId]
-        if (currentDroneIndices != null) {
-            return flow {
+        return flow {
+            val currentDroneIndices: MutableList<Int>? = index[droneId]
+            if (currentDroneIndices != null) {
+
                 var indexPosition = 0
                 val lines = eventStorageProperties.database.file.reader().readLines()
                 for (indexedValue in lines.iterator().withIndex()) {
@@ -63,7 +69,6 @@ class DroneEventsRepository(private val eventStorageProperties: EventStorageProp
                 }
             }
         }
-        return emptyFlow()
     }
 
     fun findAll(): Flow<String> {

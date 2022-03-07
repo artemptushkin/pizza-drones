@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,7 +32,7 @@ class DroneEventsRepositoryTest {
     @Autowired
     lateinit var databaseStorageTestUtil: DatabaseStorageTestUtil
 
-    @BeforeEach
+    @AfterEach
     fun setup() {
         databaseStorageTestUtil.resetDatabase()
     }

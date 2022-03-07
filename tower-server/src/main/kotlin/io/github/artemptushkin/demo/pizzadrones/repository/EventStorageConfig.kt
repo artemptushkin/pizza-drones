@@ -1,7 +1,13 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
 import io.github.artemptushkin.demo.pizzadrones.domain.DroneEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.shareIn
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
@@ -41,5 +47,12 @@ class EventStorageProperties : InitializingBean {
 class EventStorageConfiguration {
 
     @Bean
-    fun droneEventChannel(): Channel<DroneEvent> = Channel(capacity = 3)
+    fun inputChannel(): Channel<DroneEvent> = Channel(capacity = 3)
+
+    @Bean
+    fun outputFlow(): MutableSharedFlow<DroneEvent> = MutableSharedFlow()
+
+    @Bean
+    fun outputReadOnlyFlow(): SharedFlow<DroneEvent> = outputFlow()
+        .shareIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily)
 }
