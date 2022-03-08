@@ -1,0 +1,15 @@
+{
+	"namespace": "drones.avro",
+	"type": "record",
+	"name": "DroneEvent",
+	"fields": [
+		{
+			"name": "id",
+			"type": "long"
+		},
+		{
+			"name": "timestamp",
+			"type": "long"
+		}
+	]
+}

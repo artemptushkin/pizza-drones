@@ -1,6 +1,6 @@
 package io.github.artemptushkin.demo.pizzadrones.service
 
-import io.github.artemptushkin.demo.pizzadrones.domain.DroneEvent
+import io.github.artemptushkin.demo.pizzadrones.domain.DroneMessage
 import io.github.artemptushkin.demo.pizzadrones.repository.EventStorageConfiguration
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.takeWhile
@@ -115,5 +115,5 @@ class DroneEventsServiceTest {
         }
     }
 
-    private fun droneEvent(id: Long) = DroneEvent(ZonedDateTime.now().toEpochSecond(), id) //todo move to commons
+    private fun droneEvent(id: Long) = DroneMessage(id, ZonedDateTime.now().toEpochSecond()) //todo move to commons
 }

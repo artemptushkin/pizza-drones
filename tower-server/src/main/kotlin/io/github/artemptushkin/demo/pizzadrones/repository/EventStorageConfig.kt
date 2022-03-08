@@ -1,13 +1,12 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
-import io.github.artemptushkin.demo.pizzadrones.domain.DroneEvent
+import drones.avro.DroneEvent
+import io.github.artemptushkin.demo.pizzadrones.domain.DroneMessage
+import io.github.artemptushkin.demo.pizzadrones.domain.toMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.*
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.ConstructorBinding
@@ -27,6 +26,10 @@ class EventStorageProperties : InitializingBean {
     var append: Boolean = false
 
     override fun afterPropertiesSet() {
+        initDatabase()
+    }
+
+    fun initDatabase() {
         val locationDir = File(locationPath)
         if (locationDir.exists() || locationDir.mkdirs()) {
             val databaseFile = File(locationDir, "database.avro")
@@ -53,6 +56,7 @@ class EventStorageConfiguration {
     fun outputFlow(): MutableSharedFlow<DroneEvent> = MutableSharedFlow()
 
     @Bean
-    fun outputReadOnlyFlow(): SharedFlow<DroneEvent> = outputFlow()
+    fun outputReadOnlyFlow(): SharedFlow<DroneMessage> = outputFlow()
+        .map { it.toMessage() }
         .shareIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily)
 }

@@ -1,7 +1,6 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
-import io.github.artemptushkin.demo.pizzadrones.domain.DroneEvent
-import io.github.artemptushkin.demo.pizzadrones.repository.test.DatabaseStorageTestUtil
+import drones.avro.DroneEvent
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -12,17 +11,23 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.ZonedDateTime.now
+import kotlin.io.path.deleteIfExists
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 
+/**
+ * It resets the context after each test method to reinitialize database that is removed in @AfterEach method
+ */
 @OptIn(ExperimentalTime::class)
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension::class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = [EventStorageConfiguration::class], initializers = [ConfigDataApplicationContextInitializer::class])
 class DroneEventsRepositoryTest {
 
@@ -30,11 +35,11 @@ class DroneEventsRepositoryTest {
     lateinit var droneEventsRepository: DroneEventsRepository
 
     @Autowired
-    lateinit var databaseStorageTestUtil: DatabaseStorageTestUtil
+    lateinit var storageProperties: EventStorageProperties
 
     @AfterEach
-    fun setup() {
-        databaseStorageTestUtil.resetDatabase()
+    fun cleanup() {
+        storageProperties.database.file.toPath().deleteIfExists()
     }
 
     @Test
@@ -114,6 +119,6 @@ class DroneEventsRepositoryTest {
         }
     }
 
-    private fun randomEvent() = DroneEvent(now().toEpochSecond(), Random.nextLong())
-    private fun droneEvent(id: Long) = DroneEvent(now().toEpochSecond(), id)
+    private fun randomEvent() = DroneEvent(Random.nextLong(), now().toEpochSecond())
+    private fun droneEvent(id: Long) = DroneEvent(id, now().toEpochSecond())
 }

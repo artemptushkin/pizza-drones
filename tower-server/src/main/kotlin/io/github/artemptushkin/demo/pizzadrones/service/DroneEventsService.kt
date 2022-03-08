@@ -1,6 +1,8 @@
 package io.github.artemptushkin.demo.pizzadrones.service
 
-import io.github.artemptushkin.demo.pizzadrones.domain.DroneEvent
+import io.github.artemptushkin.demo.pizzadrones.domain.DroneMessage
+import io.github.artemptushkin.demo.pizzadrones.domain.toEvent
+import io.github.artemptushkin.demo.pizzadrones.domain.toMessage
 import io.github.artemptushkin.demo.pizzadrones.repository.DroneEventsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -8,19 +10,19 @@ import kotlinx.coroutines.flow.*
 import org.springframework.stereotype.Service
 
 @Service
-class DroneEventsService(private val droneEventsRepository: DroneEventsRepository, private val outputReadOnlyFlow: SharedFlow<DroneEvent>) {
+class DroneEventsService(private val droneEventsRepository: DroneEventsRepository, private val outputReadOnlyFlow: SharedFlow<DroneMessage>) {
 
-    fun stream(): Flow<String> = outputReadOnlyFlow
-        .map { it.droneId.toString() }
-        .onStart { emitAll(droneEventsRepository.findAll()) }
+    fun stream(): Flow<DroneMessage> = outputReadOnlyFlow
+        .onStart { emitAll(droneEventsRepository.findAll().map { it.toMessage() }) }
 
-    suspend fun save(droneEvent: DroneEvent) {
-        droneEventsRepository.save(droneEvent)
+    suspend fun save(droneMessage: DroneMessage) {
+        droneEventsRepository.save(droneMessage.toEvent())
     }
 
-    suspend fun streamDrone(droneId: Long): Flow<String> {
+    suspend fun streamDrone(droneId: Long): Flow<DroneMessage> {
         return droneEventsRepository
             .get(droneId)
+            .map { it.toMessage() }
             .shareIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily)
     }
 }

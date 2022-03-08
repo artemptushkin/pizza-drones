@@ -1,6 +1,6 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
-import io.github.artemptushkin.demo.pizzadrones.domain.DroneEvent
+import drones.avro.DroneEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -8,34 +8,34 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import org.apache.avro.file.DataFileReader
+import org.apache.avro.file.DataFileWriter
 import org.springframework.stereotype.Repository
-import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Repository
 class DroneEventsRepository(
-    private val eventStorageProperties: EventStorageProperties,
     private val inputChannel: Channel<DroneEvent>,
-    private val outputFlow: MutableSharedFlow<DroneEvent>
+    private val outputFlow: MutableSharedFlow<DroneEvent>,
+    private val droneWriterProvider: () -> DataFileWriter<DroneEvent>,
+    private val droneReaderProvider: () -> DataFileReader<DroneEvent>
 ) {
     private val index: MutableMap<Long, MutableList<Int>> = ConcurrentHashMap()
     private val atomicCounter: AtomicInteger = AtomicInteger()
 
     init {
-        val databaseFile = eventStorageProperties.database.file
-        val writer = FileOutputStream(databaseFile, eventStorageProperties.append).bufferedWriter()
         CoroutineScope(Dispatchers.IO)
             .launch {
                 while (!inputChannel.isClosedForReceive) {
+                    val droneEventsWriter = droneWriterProvider()
                     inputChannel.consumeEach {
-                        writer.write(StringBuilder(it.droneId.toString()).append('\n').toString())
+                        droneEventsWriter.append(it)
                         println("persisting")
-                        writer.flush()
+                        droneEventsWriter.flush()
                         outputFlow.emit(it)
                     }
                 }
@@ -43,9 +43,9 @@ class DroneEventsRepository(
     }
 
     suspend fun save(droneEvent: DroneEvent) {
-        println("saving an event with drone id ${droneEvent.droneId}")
+        println("saving an event with drone id ${droneEvent.id}")
         val newLine = atomicCounter.getAndIncrement()
-        index.compute(droneEvent.droneId) { _, u ->
+        index.compute(droneEvent.id) { _, u ->
             val result: MutableList<Int> = u ?: mutableListOf()
             result.add(newLine)
             result
@@ -53,14 +53,14 @@ class DroneEventsRepository(
         inputChannel.send(droneEvent)
     }
 
-    fun get(droneId: Long): Flow<String> {
+    fun get(droneId: Long): Flow<DroneEvent> {
         return flow {
+            val droneEventsReader: Iterable<DroneEvent> = droneReaderProvider() //todo investigate why it can't be moved before flow, 1 test hangs
             val currentDroneIndices: MutableList<Int>? = index[droneId]
             if (currentDroneIndices != null) {
-
                 var indexPosition = 0
-                val lines = eventStorageProperties.database.file.reader().readLines()
-                for (indexedValue in lines.iterator().withIndex()) {
+                val linesIterator = droneEventsReader.withIndex()
+                for (indexedValue in linesIterator) {
                     if (indexedValue.index == currentDroneIndices[indexPosition]) {
                         emit(indexedValue.value)
                         ++indexPosition
@@ -71,10 +71,12 @@ class DroneEventsRepository(
         }
     }
 
-    fun findAll(): Flow<String> {
-        return eventStorageProperties.database.file
-            .reader()
-            .readLines()
-            .asFlow()
+    fun findAll(): Flow<DroneEvent> {
+        val droneEventsReader = droneReaderProvider()
+        return flow {
+            while (droneEventsReader.hasNext()) {
+                emit(droneEventsReader.next())
+            }
+        }
     }
 }
