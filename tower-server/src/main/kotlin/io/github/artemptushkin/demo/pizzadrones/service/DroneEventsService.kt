@@ -20,9 +20,6 @@ class DroneEventsService(private val droneEventsRepository: DroneEventsRepositor
     suspend fun streamDrone(droneId: Long): Flow<DroneMessage> {
         return outputReadOnlyFlow
             .filter { it.id == droneId }
-            .onStart { emitAll(droneEventsRepository.findAll()
-                .filter { it.id == droneId }
-                .map { it.toMessage() })
-            }
+            .onStart { emitAll(droneEventsRepository.get(droneId).map { it.toMessage() }) }
     }
 }
