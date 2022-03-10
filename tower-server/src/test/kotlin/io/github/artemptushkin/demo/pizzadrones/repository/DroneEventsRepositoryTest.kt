@@ -1,22 +1,26 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
 import drones.avro.DroneEvent
+import io.github.artemptushkin.demo.pizzadrones.configuration.EventStorageConfiguration
+import io.github.artemptushkin.demo.pizzadrones.configuration.EventStorageProperties
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer
+import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Configuration
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.ZonedDateTime.now
+import kotlin.io.path.deleteIfExists
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -28,7 +32,7 @@ import kotlin.time.measureTime
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension::class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = [EventStorageConfiguration::class], initializers = [ConfigDataApplicationContextInitializer::class])
+@ContextConfiguration(classes = [EventStorageConfiguration::class, DroneEventsRepositoryTest.Config::class], initializers = [ConfigDataApplicationContextInitializer::class])
 class DroneEventsRepositoryTest {
 
     @Autowired
@@ -39,7 +43,7 @@ class DroneEventsRepositoryTest {
 
     @AfterEach
     fun cleanup() {
- //       storageProperties.database.file.toPath().deleteIfExists()
+        storageProperties.database.file.toPath().deleteIfExists()
     }
 
     @Test
@@ -49,7 +53,6 @@ class DroneEventsRepositoryTest {
             for (i in 0 until 10) {
                 droneEventsRepository.save(randomEvent())
             }
-            println("fetching all")
             assertThat(droneEventsRepository.findAll().toList()).hasSize(10)
         }
     }
@@ -142,4 +145,8 @@ class DroneEventsRepositoryTest {
 
     private fun randomEvent() = DroneEvent(Random.nextLong(), now().toEpochSecond(), 10.1, 20.0)
     private fun droneEvent(id: Long) = DroneEvent(id, now().toEpochSecond(), 10.1, 20.0)
+
+    @Configuration
+    @ComponentScan("io.github.artemptushkin.demo.pizzadrones.repository")
+    internal class Config
 }

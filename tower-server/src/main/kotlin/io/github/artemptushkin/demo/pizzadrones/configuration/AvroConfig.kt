@@ -1,4 +1,4 @@
-package io.github.artemptushkin.demo.pizzadrones.repository
+package io.github.artemptushkin.demo.pizzadrones.configuration
 
 import drones.avro.DroneEvent
 import org.apache.avro.file.DataFileReader
@@ -9,7 +9,6 @@ import org.apache.avro.specific.SpecificDatumReader
 import org.apache.avro.specific.SpecificDatumWriter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-
 
 @Configuration
 class AvroConfiguration {

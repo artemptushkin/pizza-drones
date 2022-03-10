@@ -1,7 +1,7 @@
 package io.github.artemptushkin.demo.pizzadrones.service
 
+import io.github.artemptushkin.demo.pizzadrones.configuration.EventStorageConfiguration
 import io.github.artemptushkin.demo.pizzadrones.domain.DroneMessage
-import io.github.artemptushkin.demo.pizzadrones.repository.EventStorageConfiguration
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer
+import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
@@ -21,7 +23,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalTime::class)
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension::class)
-@ContextConfiguration(classes = [EventStorageConfiguration::class, DroneEventsService::class], initializers = [ConfigDataApplicationContextInitializer::class])
+@ContextConfiguration(classes = [EventStorageConfiguration::class, DroneEventsServiceTest.Config::class], initializers = [ConfigDataApplicationContextInitializer::class])
 class DroneEventsServiceTest {
 
     @Autowired
@@ -105,5 +107,9 @@ class DroneEventsServiceTest {
         }
     }
 
-    private fun droneEvent(id: Long) = DroneMessage(id, ZonedDateTime.now().toEpochSecond(), 10.1, 20.0) //todo move to commons
+    private fun droneEvent(id: Long) = DroneMessage(id, ZonedDateTime.now().toEpochSecond(), 10.1, 20.0)
+
+    @Configuration
+    @ComponentScan(basePackages = ["io.github.artemptushkin.demo.pizzadrones.repository", "io.github.artemptushkin.demo.pizzadrones.service"])
+    internal class Config
 }

@@ -1,4 +1,4 @@
-package io.github.artemptushkin.demo.pizzadrones.repository
+package io.github.artemptushkin.demo.pizzadrones.configuration
 
 import drones.avro.DroneEvent
 import io.github.artemptushkin.demo.pizzadrones.domain.DroneMessage
