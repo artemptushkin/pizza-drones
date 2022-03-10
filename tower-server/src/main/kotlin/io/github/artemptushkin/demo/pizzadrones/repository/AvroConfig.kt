@@ -26,6 +26,10 @@ class AvroConfiguration {
 
     @Bean
     fun droneWriterProvider(eventStorageProperties: EventStorageProperties): () -> DataFileWriter<DroneEvent> = {
-        DataFileWriter(droneEventsDatumWriter()).create(DroneEvent.`SCHEMA$`, eventStorageProperties.database.file)
+        if (eventStorageProperties.database.file.readBytes().isNotEmpty()) {
+            DataFileWriter(droneEventsDatumWriter()).appendTo(eventStorageProperties.database.file)
+        } else {
+            DataFileWriter(droneEventsDatumWriter()).create(DroneEvent.`SCHEMA$`, eventStorageProperties.database.file)
+        }
     }
 }
