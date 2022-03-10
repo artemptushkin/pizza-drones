@@ -68,9 +68,8 @@ class DroneEventsRepository(
     }
 
     fun findAll(): Flow<DroneEvent> {
-        println("opening the flow find all")
-        val droneEventsReader = droneReaderProvider()
         return flow {
+            val droneEventsReader = droneReaderProvider()
             while (droneEventsReader.hasNext()) {
                 emit(droneEventsReader.next())
             }
