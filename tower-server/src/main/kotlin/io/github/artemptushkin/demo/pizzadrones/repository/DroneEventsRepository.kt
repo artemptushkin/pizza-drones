@@ -62,7 +62,7 @@ class DroneEventsRepository(
                 var indexPosition = 0
                 val linesIterator = droneEventsReader.withIndex()
                 for (indexedValue in linesIterator) {
-                    if (indexedValue.index == currentDroneIndices[indexPosition]) {
+                    if (indexedValue.value.id == droneId) {
                         emit(indexedValue.value)
                         ++indexPosition
                     }

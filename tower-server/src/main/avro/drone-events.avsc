@@ -10,6 +10,14 @@
 		{
 			"name": "timestamp",
 			"type": "long"
+		},
+		{
+			"name": "latitude",
+			"type": "double"
+		},
+		{
+			"name": "longitude",
+			"type": "double"
 		}
 	]
 }

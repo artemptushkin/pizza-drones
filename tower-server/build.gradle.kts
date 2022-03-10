@@ -18,4 +18,5 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
+    testImplementation("app.cash.turbine:turbine:0.7.0")
 }

@@ -47,7 +47,7 @@ class DroneEventsRepositoryTest {
 
         runBlocking {
             for (i in 0 until 10) {
-                droneEventsRepository.save(DroneEvent(now().toEpochSecond(), Random.nextLong()))
+                droneEventsRepository.save(randomEvent())
             }
             println("fetching all")
             assertThat(droneEventsRepository.findAll().toList()).hasSize(10)
@@ -140,6 +140,6 @@ class DroneEventsRepositoryTest {
         }
     }
 
-    private fun randomEvent() = DroneEvent(Random.nextLong(), now().toEpochSecond())
-    private fun droneEvent(id: Long) = DroneEvent(id, now().toEpochSecond())
+    private fun randomEvent() = DroneEvent(Random.nextLong(), now().toEpochSecond(), 10.1, 20.0)
+    private fun droneEvent(id: Long) = DroneEvent(id, now().toEpochSecond(), 10.1, 20.0)
 }

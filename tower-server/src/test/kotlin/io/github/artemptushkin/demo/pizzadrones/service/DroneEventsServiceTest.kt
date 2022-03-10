@@ -115,5 +115,5 @@ class DroneEventsServiceTest {
         }
     }
 
-    private fun droneEvent(id: Long) = DroneMessage(id, ZonedDateTime.now().toEpochSecond()) //todo move to commons
+    private fun droneEvent(id: Long) = DroneMessage(id, ZonedDateTime.now().toEpochSecond(), 10.1, 20.0) //todo move to commons
 }
