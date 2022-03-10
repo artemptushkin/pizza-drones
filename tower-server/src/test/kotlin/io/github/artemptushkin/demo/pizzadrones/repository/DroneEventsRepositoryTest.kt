@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,7 +17,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import java.time.ZonedDateTime.now
-import kotlin.io.path.deleteIfExists
 import kotlin.random.Random
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -39,7 +39,7 @@ class DroneEventsRepositoryTest {
 
     @AfterEach
     fun cleanup() {
-        storageProperties.database.file.toPath().deleteIfExists()
+ //       storageProperties.database.file.toPath().deleteIfExists()
     }
 
     @Test
@@ -87,6 +87,27 @@ class DroneEventsRepositoryTest {
         val count: Int = runBlocking {
             droneEventsRepository
                 .findAll()
+                .withIndex()
+                .count()
+        }
+        println("it took $time to process $count elements")
+        assertThat(count).isEqualTo(elementsToProcess)
+    }
+
+    @Test
+    fun `it stores many events and returns per drone`() {
+        val elementsToProcess = 100000
+        val droneId = Random.nextLong()
+        val time = measureTime {
+            runBlocking {
+                for (i in 0 until elementsToProcess) {
+                    droneEventsRepository.save(droneEvent(droneId))
+                }
+            }
+        }
+        val count: Int = runBlocking {
+            droneEventsRepository
+                .get(droneId)
                 .withIndex()
                 .count()
         }
