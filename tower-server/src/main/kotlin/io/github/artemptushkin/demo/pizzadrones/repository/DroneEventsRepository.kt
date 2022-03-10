@@ -53,20 +53,15 @@ class DroneEventsRepository(
         inputChannel.send(droneEvent)
     }
 
-    //todo it should loop through lines and do not deserialize records OR google avro indexing
     fun get(droneId: Long): Flow<DroneEvent> {
         return flow {
             val droneEventsReader: Iterable<DroneEvent> = droneReaderProvider()
-            val currentDroneIndices: MutableList<Int>? = index[droneId]
-            if (currentDroneIndices != null) {
-                var indexPosition = 0
-                val linesIterator = droneEventsReader.withIndex()
-                for (indexedValue in linesIterator) {
-                    if (indexedValue.value.id == droneId) {
-                        emit(indexedValue.value)
-                        ++indexPosition
-                    }
-                    if (currentDroneIndices.size == indexPosition) break
+            var indexPosition = 0
+            val linesIterator = droneEventsReader.withIndex()
+            for (indexedValue in linesIterator) {
+                if (indexedValue.value.id == droneId) {
+                    emit(indexedValue.value)
+                    ++indexPosition
                 }
             }
         }

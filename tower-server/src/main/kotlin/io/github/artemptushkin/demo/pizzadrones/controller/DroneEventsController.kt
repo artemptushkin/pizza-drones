@@ -26,5 +26,7 @@ class DroneEventsController(private val droneEventsService: DroneEventsService) 
     suspend fun send(): Flow<DroneMessage> = droneEventsService.stream()
 
     @MessageMapping("api.drone.locations.stream")
-    suspend fun sendDrone(droneId: Long): Flow<DroneMessage> = droneEventsService.streamDrone(droneId)
+    suspend fun sendDrone(droneId: Long): Flow<DroneMessage> {
+        return droneEventsService.streamDrone(droneId)
+    }
 }

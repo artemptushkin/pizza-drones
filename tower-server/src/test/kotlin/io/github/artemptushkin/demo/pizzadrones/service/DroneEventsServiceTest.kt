@@ -2,7 +2,6 @@ package io.github.artemptushkin.demo.pizzadrones.service
 
 import io.github.artemptushkin.demo.pizzadrones.domain.DroneMessage
 import io.github.artemptushkin.demo.pizzadrones.repository.EventStorageConfiguration
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
@@ -103,15 +102,6 @@ class DroneEventsServiceTest {
                     .takeWhile { it.index != elementsPerDrone * 2 }
                     .toList()
             ).hasSize(elementsPerDrone * 2)
-        }
-    }
-
-    @Test
-    fun `it returns instance of shared flow on drone stream`() {
-        runBlocking {
-            val droneId = Random.nextLong()
-            droneEventsService.save(droneEvent(droneId))
-            assertThat(droneEventsService.streamDrone(droneId)).isInstanceOf(SharedFlow::class.java)
         }
     }
 

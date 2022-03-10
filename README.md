@@ -11,6 +11,46 @@ Bonus exercises/food for thought:
 * The solution should work also with millions of positions stored.
 * The system should support more than one monitoring tower.
 
+
+#### Prerequisites to work with
+
+1. Install [RSocket CLI client](https://github.com/making/rsc)
+```shell
+brew install making/tap/rsc
+```
+
+#### It supports more than one monitoring tower
+
+* Run 2 towers
+```shell
+#session 1
+./gradlew bootRun --args='--spring.rsocket.server.port=7001 --server.port=8081'
+
+#session 2
+./gradlew bootRun --args='--spring.rsocket.server.port=7002 --server.port=8082'
+```
+
+* Run 2 RSocket clients, one client per one tower
+```shell
+#session 1
+rsc --route=api.drones.locations.stream tcp://localhost:7001 --stream
+
+#session 2
+rsc --route=api.drones.locations.stream tcp://localhost:7002 --stream
+```
+
+* Send event to a tower
+```shell
+rsc --route=api.drones.locations.fire --data='{
+  "id": 1,
+  "timestamp": 1646930784,
+  "latitude": 10.1,
+  "longitude": 2.2
+}' tcp://localhost:7002 --request
+```
+
+* Expect both clients to get it in the output
+
 ### Plan
 
 1. Database layer

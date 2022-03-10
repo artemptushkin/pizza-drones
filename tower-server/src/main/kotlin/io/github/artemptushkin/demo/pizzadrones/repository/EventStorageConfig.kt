@@ -23,13 +23,8 @@ import java.io.File
 class EventStorageProperties : InitializingBean {
     lateinit var locationPath: String
     lateinit var database: Resource
-    var append: Boolean = false
 
     override fun afterPropertiesSet() {
-        initDatabase()
-    }
-
-    fun initDatabase() {
         val locationDir = File(locationPath)
         if (locationDir.exists() || locationDir.mkdirs()) {
             val databaseFile = File(locationDir, "database.avro")

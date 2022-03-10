@@ -1,4 +1,4 @@
 spring.rsocket.server.port: 7000
 storage:
-  locationPath: storage
+  locationPath: ../storage
   append: true

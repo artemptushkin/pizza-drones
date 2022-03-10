@@ -4,8 +4,6 @@ import io.github.artemptushkin.demo.pizzadrones.domain.DroneMessage
 import io.github.artemptushkin.demo.pizzadrones.domain.toEvent
 import io.github.artemptushkin.demo.pizzadrones.domain.toMessage
 import io.github.artemptushkin.demo.pizzadrones.repository.DroneEventsRepository
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import org.springframework.stereotype.Service
 
@@ -20,9 +18,11 @@ class DroneEventsService(private val droneEventsRepository: DroneEventsRepositor
     }
 
     suspend fun streamDrone(droneId: Long): Flow<DroneMessage> {
-        return droneEventsRepository
-            .get(droneId)
-            .map { it.toMessage() }
-            .shareIn(CoroutineScope(Dispatchers.IO), SharingStarted.Lazily)
+        return outputReadOnlyFlow
+            .filter { it.id == droneId }
+            .onStart { emitAll(droneEventsRepository.findAll()
+                .filter { it.id == droneId }
+                .map { it.toMessage() })
+            }
     }
 }
