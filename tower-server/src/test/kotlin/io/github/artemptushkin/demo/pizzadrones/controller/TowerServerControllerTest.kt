@@ -19,7 +19,7 @@ import kotlin.random.Random
 
 @ExtendWith(SpringExtension::class)
 @SpringBootTest
-class DroneEventsControllerTest {
+class TowerServerControllerTest {
     @Autowired
     lateinit var rsocketBuilder: RSocketRequester.Builder
 

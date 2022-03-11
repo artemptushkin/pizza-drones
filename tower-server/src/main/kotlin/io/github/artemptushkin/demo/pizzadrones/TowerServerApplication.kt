@@ -5,8 +5,8 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 import org.springframework.boot.runApplication
 
 @SpringBootApplication(exclude = [DataSourceAutoConfiguration::class])
-class PizzaDronesApplication
+class TowerServerApplication
 
 fun main(args: Array<String>) {
-    runApplication<PizzaDronesApplication>(*args)
+    runApplication<TowerServerApplication>(*args)
 }

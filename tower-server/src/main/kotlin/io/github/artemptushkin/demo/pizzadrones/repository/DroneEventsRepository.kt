@@ -25,7 +25,7 @@ class DroneEventsRepository(
     private val droneReaderProvider: () -> DataFileReader<DroneEvent>
 ) {
     private val index: MutableMap<Long, MutableList<Int>> = ConcurrentHashMap()
-    private val atomicCounter: AtomicInteger = AtomicInteger()
+    private val atomicLinesCounter: AtomicInteger = AtomicInteger()
 
     init {
         CoroutineScope(Dispatchers.IO)
@@ -34,7 +34,6 @@ class DroneEventsRepository(
                     val droneEventsWriter = droneWriterProvider()
                     inputChannel.consumeEach {
                         droneEventsWriter.append(it)
-                        println("persisting")
                         droneEventsWriter.flush()
                         outputFlow.emit(it)
                     }
@@ -43,8 +42,7 @@ class DroneEventsRepository(
     }
 
     suspend fun save(droneEvent: DroneEvent) {
-        println("saving an event with drone id ${droneEvent.id}")
-        val newLine = atomicCounter.getAndIncrement()
+        val newLine = atomicLinesCounter.getAndIncrement()
         index.compute(droneEvent.id) { _, u ->
             val result: MutableList<Int> = u ?: mutableListOf()
             result.add(newLine)
