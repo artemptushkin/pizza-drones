@@ -3,6 +3,7 @@ package io.github.artemptushkin.demo.pizzadrones.repository
 import drones.avro.DroneEvent
 import io.github.artemptushkin.demo.pizzadrones.configuration.EventStorageConfiguration
 import io.github.artemptushkin.demo.pizzadrones.configuration.EventStorageProperties
+import io.github.artemptushkin.demo.pizzadrones.service.IndexService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.annotation.DirtiesContext
@@ -79,7 +81,7 @@ class DroneEventsRepositoryTest {
 
     @Test
     fun `it stores many events`() {
-        val elementsToProcess = 100000
+        val elementsToProcess = 1000
         val time = measureTime {
             runBlocking {
                 for (i in 0 until elementsToProcess) {
@@ -99,7 +101,7 @@ class DroneEventsRepositoryTest {
 
     @Test
     fun `it stores many events and returns per drone`() {
-        val elementsToProcess = 100000
+        val elementsToProcess = 1000000
         val droneId = Random.nextLong()
         val time = measureTime {
             runBlocking {
@@ -148,5 +150,8 @@ class DroneEventsRepositoryTest {
 
     @Configuration
     @ComponentScan("io.github.artemptushkin.demo.pizzadrones.repository")
-    internal class Config
+    internal class Config {
+        @Bean
+        fun indexService(eventStorageProperties: EventStorageProperties): IndexService = IndexService(eventStorageProperties, mutableMapOf())
+    }
 }

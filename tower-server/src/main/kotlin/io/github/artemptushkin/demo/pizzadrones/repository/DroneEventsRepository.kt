@@ -1,6 +1,7 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
 import drones.avro.DroneEvent
+import io.github.artemptushkin.demo.pizzadrones.service.IndexService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,8 +14,7 @@ import kotlinx.coroutines.launch
 import org.apache.avro.file.DataFileReader
 import org.apache.avro.file.DataFileWriter
 import org.springframework.stereotype.Repository
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Repository
@@ -22,10 +22,10 @@ class DroneEventsRepository(
     private val inputChannel: Channel<DroneEvent>,
     private val outputFlow: MutableSharedFlow<DroneEvent>,
     private val droneWriterProvider: () -> DataFileWriter<DroneEvent>,
-    private val droneReaderProvider: () -> DataFileReader<DroneEvent>
+    private val droneReaderProvider: () -> DataFileReader<DroneEvent>,
+    private val indexService: IndexService
 ) {
-    private val index: MutableMap<Long, MutableList<Int>> = ConcurrentHashMap()
-    private val atomicCounter: AtomicInteger = AtomicInteger()
+    private val atomicCounter: AtomicLong = AtomicLong()
 
     init {
         CoroutineScope(Dispatchers.IO)
@@ -34,22 +34,18 @@ class DroneEventsRepository(
                     val droneEventsWriter = droneWriterProvider()
                     inputChannel.consumeEach {
                         droneEventsWriter.append(it)
-                        println("persisting")
+                //        println("persisting")
                         droneEventsWriter.flush()
                         outputFlow.emit(it)
+                        val newLineIndex = atomicCounter.getAndIncrement()
+                        indexService[it.id] = newLineIndex
                     }
                 }
             }
     }
 
     suspend fun save(droneEvent: DroneEvent) {
-        println("saving an event with drone id ${droneEvent.id}")
-        val newLine = atomicCounter.getAndIncrement()
-        index.compute(droneEvent.id) { _, u ->
-            val result: MutableList<Int> = u ?: mutableListOf()
-            result.add(newLine)
-            result
-        }
+       // println("saving an event with drone id ${droneEvent.id}")
         inputChannel.send(droneEvent)
     }
 
