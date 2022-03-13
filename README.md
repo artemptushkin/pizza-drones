@@ -11,41 +11,50 @@ Bonus exercises/food for thought:
 * The solution should work also with millions of positions stored.
 * The system should support more than one monitoring tower.
 
-
 #### Prerequisites to work with
 
-1. Install [RSocket CLI client](https://github.com/making/rsc)
+1. JDK 17+
+
+3. Install [RSocket CLI client](https://github.com/making/rsc)
 ```shell
 brew install making/tap/rsc
 ```
 
 #### It supports more than one monitoring tower
 
-* Run a tower
-```shell
-./gradlew :tower-server:bootRun
-```
-
-* Run 2 or more drone-clients
+* Run 2 tower-servers
 ```shell
 #session 1
-./gradlew :drone-client:bootRun --args='--spring.rsocket.server.port=8001'
+./gradlew :tower-server:bootRun --args='--spring.rsocket.server.port=7001 --server.port=8081'
 
 #session 2
-./gradlew :drone-client:bootRun --args='--spring.rsocket.server.port=8002'
+./gradlew :tower-server:bootRun --args='--spring.rsocket.server.port=7002 --server.port=8082'
 ```
 
-* Listen to the event stream from RSocket CLI
+* Run 2 drones, one per server
 ```shell
-rsc --route=api.drones.locations.stream tcp://localhost:7000 --stream
+#session 1
+./gradlew :drone-client:bootRun --args='--spring.rsocket.server.port=8001 --tower-server.port=7001'
+
+#session 2
+./gradlew :drone-client:bootRun --args='--spring.rsocket.server.port=8002 --tower-server.port=7002'
+```
+
+* Listen to the event stream of all the drones from RSocket CLI
+```shell
+#session 1
+rsc --route=api.drones.locations.stream tcp://localhost:7001 --stream
+
+#session 2
+rsc --route=api.drones.locations.stream tcp://localhost:7002 --stream
 ```
 
 * Or listen to the event stream of a particular drone from RSocket CLI
 ```shell
-rsc --route=api.drone.locations.stream tcp://localhost:7000 --data=1 --stream
+rsc --route=api.drone.locations.stream tcp://localhost:7001 --data=1 --stream
 ```
 
-* Expect to receive stream of events, like:
+* Expect to receive stream of events in each tower-server session, like:
 ```shell
 {"id":5,"timestamp":1647007058,"latitude":44.8,"longitude":10.25}
 {"id":1,"timestamp":1647007063,"latitude":44.8,"longitude":10.25}
@@ -59,21 +68,7 @@ rsc --route=api.drone.locations.stream tcp://localhost:7000 --data=1 --stream
 
 * Expect both clients to get it in the output
 
-### Plan
+### Technical stack
 
-1. Database layer
-* it persists a new record to the end of the file O(1)
-* it returns by drone O(1)
-* it indexes by drone
-  - drone id - array of intervals line index [1, 3, 5]
-* it dumps index every N periods ??
-* it stores in concurrently saved in-memory queue
-* it dumps in-memory-queue into file system every N periods
-2. Drone client
-* it sends drone event to the server
-3. Tower server
-* It stores into a database from properties
-* It consumer drone events
-* It streams all the events from the start
-* [Optional] It streams _live_ events
-* It streams by drone
+1. [RSocket](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html#rsocket) to get light live stream events from drone
+2. [JGroups](http://www.jgroups.org/) to share events within the tower-server cluster

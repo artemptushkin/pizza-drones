@@ -41,6 +41,7 @@ class TowerServerControllerTest {
                 .retrieveFlow<DroneMessage>()
                 .test {
                     assertThat(this.awaitItem()).isNotNull
+                    cancelAndIgnoreRemainingEvents()
                 }
         }
     }

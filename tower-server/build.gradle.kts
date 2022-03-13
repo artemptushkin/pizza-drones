@@ -7,9 +7,9 @@ plugins {
 
 dependencies {
     implementation("org.apache.avro:avro:${property("avroVersion")}")
+    implementation("org.jgroups:jgroups:5.2.0.Final")
 
     implementation("org.springframework.boot:spring-boot-starter-rsocket")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")

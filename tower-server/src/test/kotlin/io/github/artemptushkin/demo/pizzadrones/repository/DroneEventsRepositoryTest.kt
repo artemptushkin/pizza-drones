@@ -3,6 +3,7 @@ package io.github.artemptushkin.demo.pizzadrones.repository
 import drones.avro.DroneEvent
 import io.github.artemptushkin.demo.pizzadrones.configuration.EventStorageConfiguration
 import io.github.artemptushkin.demo.pizzadrones.configuration.EventStorageProperties
+import io.github.artemptushkin.demo.pizzadrones.configuration.JGroupsConfiguration
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.toList
@@ -32,7 +33,7 @@ import kotlin.time.measureTime
 @ActiveProfiles("test")
 @ExtendWith(SpringExtension::class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = [EventStorageConfiguration::class, DroneEventsRepositoryTest.Config::class], initializers = [ConfigDataApplicationContextInitializer::class])
+@ContextConfiguration(classes = [EventStorageConfiguration::class, JGroupsConfiguration::class, DroneEventsRepositoryTest.Config::class], initializers = [ConfigDataApplicationContextInitializer::class])
 class DroneEventsRepositoryTest {
 
     @Autowired
@@ -71,6 +72,8 @@ class DroneEventsRepositoryTest {
             droneEventsRepository.save(drone2Event1)
             droneEventsRepository.save(drone2Event2)
             droneEventsRepository.save(drone1Event2)
+
+            delay(200)
 
             assertThat(droneEventsRepository.get(id1).toList()).hasSize(2)
             assertThat(droneEventsRepository.get(id2).toList()).hasSize(2)
@@ -147,6 +150,6 @@ class DroneEventsRepositoryTest {
     private fun droneEvent(id: Long) = DroneEvent(id, now().toEpochSecond(), 10.1, 20.0)
 
     @Configuration
-    @ComponentScan("io.github.artemptushkin.demo.pizzadrones.repository")
+    @ComponentScan(basePackages = ["io.github.artemptushkin.demo.pizzadrones.repository", "io.github.artemptushkin.demo.pizzadrones.service"])
     internal class Config
 }

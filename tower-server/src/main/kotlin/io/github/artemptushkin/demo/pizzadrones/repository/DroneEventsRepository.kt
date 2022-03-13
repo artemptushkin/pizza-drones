@@ -1,13 +1,13 @@
 package io.github.artemptushkin.demo.pizzadrones.repository
 
 import drones.avro.DroneEvent
+import io.github.artemptushkin.demo.pizzadrones.service.JGroupsService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.apache.avro.file.DataFileReader
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Repository
 @Repository
 class DroneEventsRepository(
     private val inputChannel: Channel<DroneEvent>,
-    private val outputFlow: MutableSharedFlow<DroneEvent>,
+    private val jGroupsService: JGroupsService,
     private val droneWriterProvider: () -> DataFileWriter<DroneEvent>,
     private val droneReaderProvider: () -> DataFileReader<DroneEvent>
 ) {
@@ -31,7 +31,7 @@ class DroneEventsRepository(
                     inputChannel.consumeEach {
                         droneEventsWriter.append(it)
                         droneEventsWriter.flush()
-                        outputFlow.emit(it)
+                        jGroupsService.emit(it)
                     }
                 }
             }
