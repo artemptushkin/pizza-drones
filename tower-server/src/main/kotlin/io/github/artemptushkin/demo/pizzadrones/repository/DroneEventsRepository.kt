@@ -13,8 +13,6 @@ import kotlinx.coroutines.launch
 import org.apache.avro.file.DataFileReader
 import org.apache.avro.file.DataFileWriter
 import org.springframework.stereotype.Repository
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Repository
@@ -24,8 +22,6 @@ class DroneEventsRepository(
     private val droneWriterProvider: () -> DataFileWriter<DroneEvent>,
     private val droneReaderProvider: () -> DataFileReader<DroneEvent>
 ) {
-    private val index: MutableMap<Long, MutableList<Int>> = ConcurrentHashMap()
-    private val atomicLinesCounter: AtomicInteger = AtomicInteger()
 
     init {
         CoroutineScope(Dispatchers.IO)
@@ -42,30 +38,14 @@ class DroneEventsRepository(
     }
 
     suspend fun save(droneEvent: DroneEvent) {
-        val newLine = atomicLinesCounter.getAndIncrement()
-        index.compute(droneEvent.id) { _, u ->
-            val result: MutableList<Int> = u ?: mutableListOf()
-            result.add(newLine)
-            result
-        }
         inputChannel.send(droneEvent)
     }
 
     fun get(droneId: Long): Flow<DroneEvent> {
         return flow {
-            val droneEventsReader: Iterable<DroneEvent> = droneReaderProvider()
-            val currentDroneIndices: MutableList<Int>? = index[droneId]
-            if (currentDroneIndices != null) {
-                var indexPosition = 0
-                val linesIterator = droneEventsReader.withIndex()
-                for (indexedValue in linesIterator) {
-                    if (indexedValue.index == currentDroneIndices[indexPosition]) {
-                        emit(indexedValue.value)
-                        ++indexPosition
-                    }
-                    if (currentDroneIndices.size == indexPosition) break
-                }
-            }
+            droneReaderProvider()
+                .filter { it.id == droneId }
+                .forEach { emit(it) }
         }
     }
 

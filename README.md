@@ -21,32 +21,40 @@ brew install making/tap/rsc
 
 #### It supports more than one monitoring tower
 
-* Run 2 towers
+* Run a tower
 ```shell
-#session 1
-./gradlew bootRun --args='--spring.rsocket.server.port=7001 --server.port=8081'
-
-#session 2
-./gradlew bootRun --args='--spring.rsocket.server.port=7002 --server.port=8082'
+./gradlew :tower-server:bootRun
 ```
 
-* Run 2 RSocket clients, one client per one tower
+* Run 2 or more drone-clients
 ```shell
 #session 1
-rsc --route=api.drones.locations.stream tcp://localhost:7001 --stream
+./gradlew :drone-client:bootRun --args='--spring.rsocket.server.port=8001'
 
 #session 2
-rsc --route=api.drones.locations.stream tcp://localhost:7002 --stream
+./gradlew :drone-client:bootRun --args='--spring.rsocket.server.port=8002'
 ```
 
-* Send event to a tower
+* Listen to the event stream from RSocket CLI
 ```shell
-rsc --route=api.drones.locations.fire --data='{
-  "id": 1,
-  "timestamp": 1646930784,
-  "latitude": 10.1,
-  "longitude": 2.2
-}' tcp://localhost:7002 --request
+rsc --route=api.drones.locations.stream tcp://localhost:7000 --stream
+```
+
+* Or listen to the event stream of a particular drone from RSocket CLI
+```shell
+rsc --route=api.drone.locations.stream tcp://localhost:7000 --data=1 --stream
+```
+
+* Expect to receive stream of events, like:
+```shell
+{"id":5,"timestamp":1647007058,"latitude":44.8,"longitude":10.25}
+{"id":1,"timestamp":1647007063,"latitude":44.8,"longitude":10.25}
+{"id":5,"timestamp":1647007071,"latitude":44.8,"longitude":10.25}
+{"id":5,"timestamp":1647007073,"latitude":44.8,"longitude":10.25}
+{"id":1,"timestamp":1647007075,"latitude":44.8,"longitude":10.25}
+{"id":110,"timestamp":1647007086,"latitude":44.8,"longitude":10.25}
+{"id":110,"timestamp":1647007088,"latitude":44.8,"longitude":10.25}
+{"id":1,"timestamp":1647007543,"latitude":44.8,"longitude":10.25}
 ```
 
 * Expect both clients to get it in the output
