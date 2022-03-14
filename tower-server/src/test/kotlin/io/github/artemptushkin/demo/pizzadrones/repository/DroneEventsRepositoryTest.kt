@@ -54,6 +54,7 @@ class DroneEventsRepositoryTest {
             for (i in 0 until 10) {
                 droneEventsRepository.save(randomEvent())
             }
+            delay(500)
             assertThat(droneEventsRepository.findAll().toList()).hasSize(10)
         }
     }
@@ -91,6 +92,7 @@ class DroneEventsRepositoryTest {
             }
         }
         val count: Int = runBlocking {
+            delay(200)
             droneEventsRepository
                 .findAll()
                 .withIndex()

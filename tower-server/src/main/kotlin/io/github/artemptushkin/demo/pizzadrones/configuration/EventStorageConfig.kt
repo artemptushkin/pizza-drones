@@ -6,6 +6,7 @@ import io.github.artemptushkin.demo.pizzadrones.domain.toMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
 import kotlinx.coroutines.flow.*
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -45,7 +46,7 @@ class EventStorageProperties : InitializingBean {
 class EventStorageConfiguration {
 
     @Bean
-    fun inputChannel(): Channel<DroneEvent> = Channel(capacity = 3)
+    fun inputChannel(): Channel<DroneEvent> = Channel(BUFFERED)
 
     @Bean
     fun outputFlow(): MutableSharedFlow<DroneEvent> = MutableSharedFlow()

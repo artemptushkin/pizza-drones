@@ -72,3 +72,6 @@ rsc --route=api.drone.locations.stream tcp://localhost:7001 --data=1 --stream
 
 1. [RSocket](https://docs.spring.io/spring-framework/docs/current/reference/html/web-reactive.html#rsocket) to get light live stream events from drone
 2. [JGroups](http://www.jgroups.org/) to share events within the tower-server cluster
+3. [Apache Avro](https://avro.apache.org/):
+* share lightweight cross-cluster binary events
+* store events in file system in 32 bytes format
